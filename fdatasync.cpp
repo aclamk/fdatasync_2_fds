@@ -32,7 +32,7 @@ int do_test(bool use_2_fds)
   int fd0, fd1;
   off_t off0, off1;
   double t0,t1,t2;
-  double ts0, ts1;
+  double ts0 = 0, ts1 = 0;
   int r;
   
   fd0 = open(file_name.c_str(), O_RDWR);

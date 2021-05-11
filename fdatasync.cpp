@@ -23,13 +23,13 @@ double now()
 char* data;
 std::string file_name;
 
-static constexpr size_t data_size = 1*1024*1024;
+static constexpr size_t data_size = 4*1024*1024;
 static constexpr size_t data_align = 4*1024;
 
 
-int do_test(bool use_2_fds)
+int do_test(bool use_2_fds, bool use_direct_sync)
 {
-  int fd0, fd1;
+  int fd0, fd1, fdx;
   off_t off0, off1;
   double t0,t1,t2;
   double ts0 = 0, ts1 = 0;
@@ -39,7 +39,8 @@ int do_test(bool use_2_fds)
   assert(fd0 >= 0);
   fd1 = open(file_name.c_str(), O_RDWR);
   assert(fd1 >= 0);
-
+  fdx = open(file_name.c_str(), O_RDWR | O_DIRECT);
+  
   off0 = 0;
   off1 = data_size * 2 * 100;
 
@@ -55,9 +56,15 @@ int do_test(bool use_2_fds)
     off1 += data_size*2;
     
     t0 = now();
-    fdatasync(fd0);
+    if (use_direct_sync)
+      fdatasync(fdx);
+    else
+      fdatasync(fd0);
     t1 = now();
-    fdatasync(fd1);
+    if (use_direct_sync)
+      fdatasync(fdx);
+    else
+      fdatasync(fd1);
     t2 = now();
 
     ts0 += t1 - t0;
@@ -79,8 +86,10 @@ int main(int argc, char** argv) {
 
   data = (char*) memalign(data_align, data_size);
   file_name = argv[1];
-  do_test(true);
-  do_test(false);
+  do_test(true , false);
+  do_test(false, false);
+  do_test(true , true);
+  do_test(false, true);
   
   return 0;
 }
